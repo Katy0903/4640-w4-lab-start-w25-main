@@ -6,7 +6,7 @@ See lab instructions on D2L for details
 ### General Setup
 
 **Set up AWS EC2 instance with Terraform**:
-1. Clone the init folder to the linux environment
+1. Clone the init folder to the linux environment.
 2. Update the cloud-config ymal file with installing packages and ssh key information.
 3. Edit the main.tf file with correct information.
 4. Run terraform command like terrafrom init and terraform apply.
@@ -17,7 +17,7 @@ See lab instructions on D2L for details
 To create a new SSH key pair in my Linux environment, I run this command:
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/bcitkey2 -C "bcitkey2_ubuntu"
+ssh-keygen -t ed25519 -f ~/.ssh/<keyname> -C <description>
 ```
 
 ### Terraform Setup Instructions
