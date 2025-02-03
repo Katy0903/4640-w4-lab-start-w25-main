@@ -36,10 +36,13 @@ data "aws_ami" "ubuntu" {
 resource "aws_vpc" "web" {
   cidr_block           = "10.0.0.0/16"
 	# enable dns enable_dns_hostnames
+  enable_dns_support   = true
+  enable_dns_hostnames = true
 
   tags = {
-    Name    = "project_vpc"
 		# add project name using local
+    Name    = "${local.project_name}_vpc"
+
   }
 }
 
@@ -51,11 +54,14 @@ resource "aws_subnet" "web" {
   vpc_id                  = aws_vpc.web.id
   cidr_block              = "10.0.1.0/24"
 	# set availability zone
+  availability_zone       = "us-west-2a"
 	# add public ip on launch
+  map_public_ip_on_launch = true
 
   tags = {
-    Name = "Web"
 		# add project name using local
+    Name = "${local.project_name}_subnet"
+
   }
 }
 
@@ -63,10 +69,11 @@ resource "aws_subnet" "web" {
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/internet_gateway
 resource "aws_internet_gateway" "web-gw" {
 	# add vpc
+  vpc_id = aws_vpc.web.id
 
   tags = {
-    Name = "Web"
 		# add project name using local
+    Name = "${local.project_name}_igw"
   }
 }
 
@@ -74,10 +81,11 @@ resource "aws_internet_gateway" "web-gw" {
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table
 resource "aws_route_table" "web" {
 	# add vpc 
+  vpc_id = aws_vpc.web.id
 
   tags = {
-    Name = "web-route"
 		# add project name using local
+    Name = "${local.project_name}_routeTB"
   }
 }
 
@@ -87,23 +95,27 @@ resource "aws_route" "default_route" {
   route_table_id         = aws_route_table.web.id
   destination_cidr_block = "0.0.0.0/0"
 	# add gateway id
+  gateway_id             = aws_internet_gateway.web-gw.id
+
 }
 
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table_association
 resource "aws_route_table_association" "web" {
 	# add subnet id
+  subnet_id      = aws_subnet.web.id
   route_table_id = aws_route_table.web.id
 }
 
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group
 resource "aws_security_group" "web" {
-  name        = "allow_ssh"
+  name        = "${local.project_name}_allow_ssh"
   description = "allow ssh from home and work"
 	# add vpc id
+  vpc_id      = aws_vpc.web.id
 
   tags = {
-    Name = "Web"
 		# add project name using local
+    Name = "${local.project_name}_sg"
   }
 }
 
@@ -113,6 +125,10 @@ resource "aws_vpc_security_group_ingress_rule" "web-ssh" {
   security_group_id = aws_security_group.web.id
 
   # allow ssh anywhere
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
 # allow http
@@ -121,6 +137,11 @@ resource "aws_vpc_security_group_ingress_rule" "web-http" {
   security_group_id = aws_security_group.web.id
 
 	# allow http anywhere
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
+
 }
 
 # allow all out
@@ -141,6 +162,7 @@ resource "aws_vpc_security_group_egress_rule" "web-egress" {
 #   public_key = file("~/.ssh/aws.pub")
 # }
 
+
 # create the ec2 instance
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
 resource "aws_instance" "web" {
@@ -148,11 +170,16 @@ resource "aws_instance" "web" {
   # set instance type
 	# add user datat for cloud-config file in scripts directory
 	# add vpc security group 
-  subnet_id              = aws_subnet.web.id
+  ami                           = data.aws_ami.ubuntu.id
+  instance_type                 = "t2.micro"
+  user_data                     = file("scripts/cloud-config.yaml")
+  subnet_id                     = aws_subnet.web.id
+  vpc_security_group_ids        = [aws_security_group.web.name]
+
 
   tags = {
-    Name = "Web"
 		# add project name using local
+    Name = "${local.project_name}_ec2"
   }
 }
 
