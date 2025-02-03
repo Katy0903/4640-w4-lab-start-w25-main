@@ -127,7 +127,7 @@ resource "aws_vpc_security_group_ingress_rule" "web-ssh" {
   # allow ssh anywhere
   from_port         = 22
   to_port           = 22
-  protocol          = "tcp"
+  ip_protocol       = "tcp"
   cidr_ipv4         = "0.0.0.0/0"
 }
 
@@ -139,7 +139,7 @@ resource "aws_vpc_security_group_ingress_rule" "web-http" {
 	# allow http anywhere
   from_port         = 80
   to_port           = 80
-  protocol          = "tcp"
+  ip_protocol       = "tcp"
   cidr_ipv4         = "0.0.0.0/0"
 
 }
@@ -172,9 +172,10 @@ resource "aws_instance" "web" {
 	# add vpc security group 
   ami                           = data.aws_ami.ubuntu.id
   instance_type                 = "t2.micro"
-  user_data                     = file("scripts/cloud-config.yaml")
+  # key_name                      = "bcitkey2" 
+  user_data                     = file("./scripts/cloud-config.yaml")
   subnet_id                     = aws_subnet.web.id
-  vpc_security_group_ids        = [aws_security_group.web.name]
+  vpc_security_group_ids        = [aws_security_group.web.id]
 
 
   tags = {
